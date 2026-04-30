@@ -1,0 +1,42 @@
+name: Build Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create .env.local
+        shell: pwsh
+        run: |
+          @"
+          WOT_DEFAULT_REGION=eu
+          WOT_USE_MOCK_DATA=true
+          "@ | Out-File -FilePath .env.local -Encoding utf8
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build portable EXE
+        run: npm run dist:portable
+
+      - name: Build installer EXE
+        run: npm run dist:win
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wot-tracker-windows-build
+          path: dist/*
