@@ -62,3 +62,16 @@ export type AppConfig = {
 export type PublicAppConfig = Omit<AppConfig, 'applicationId'> & {
   hasApplicationId: boolean;
 };
+
+
+export type CustomGuide = {
+  id: string;
+  map: string;
+  tankClass: TankClass;
+  tank: string;
+  safeRoute: string;
+  aggressiveRoute: string;
+  avoid: string;
+  note: string;
+  createdAt: string;
+};

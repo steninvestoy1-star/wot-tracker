@@ -6,6 +6,7 @@ import { SummaryCards } from '@/components/summary-cards';
 import { TankTable } from '@/components/tank-table';
 import { MapAdvisor } from '@/components/map-advisor';
 import { SetupWizard } from '@/components/setup-wizard';
+import { CustomGuideEditor } from '@/components/custom-guide-editor';
 import { MAP_GUIDES } from '@/lib/map-guides';
 import type { PlayerProfileResponse, PublicAppConfig, SearchPlayerResult, WotRegion } from '@/lib/types';
 
@@ -117,6 +118,8 @@ export default function HomePage() {
             <TankTable tanks={profile.tanks} selectedTankId={selectedTankId} onSelect={setSelectedTankId} />
             <MapAdvisor mapName={selectedMap} tank={selectedTank} tanks={profile.tanks} onTankSelect={setSelectedTankId} />
           </div>
+
+          <CustomGuideEditor mapName={selectedMap} mapNames={Object.keys(MAP_GUIDES)} selectedTank={selectedTank} />
         </>
       ) : (
         <div className="card section-pad empty">

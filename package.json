@@ -1,6 +1,6 @@
 {
   "name": "wot-tracker-desktop",
-  "version": "0.6.1",
+  "version": "0.6.0",
   "private": true,
   "author": "OpenAI / Custom Build",
   "description": "WoT Tracker Desktop - World of Tanks statistics tracker and map advisor",

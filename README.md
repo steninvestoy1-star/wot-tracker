@@ -96,3 +96,15 @@ Selles versioonis valmistatakse standalone runtime enne Electron buildi eraldi e
 - `.next/static` kopeeritakse `release-runtime/standalone/.next/static`
 - `public` kopeeritakse `release-runtime/standalone/public`
 - Electron pakib kaasa `release-runtime/standalone`
+
+
+## Custom Guide Editor
+
+Lisatud:
+- oma map/tank/tankiklassi route soovitused
+- safe route
+- aggressive route
+- mida vältida
+- oma märkused
+- JSON import/export
+- localStorage salvestus
