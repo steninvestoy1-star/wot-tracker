@@ -1,6 +1,6 @@
 const { app, BrowserWindow, nativeImage, dialog } = require('electron');
 const path = require('path');
-const { fork } = require('child_process');
+const { spawn } = require('child_process');
 
 let mainWindow = null;
 let splashWindow = null;
@@ -11,8 +11,11 @@ const port = 3000;
 const host = '127.0.0.1';
 
 function getAppIcon() {
-  const pngPath = path.join(__dirname, '..', 'build', 'icon.png');
-  return nativeImage.createFromPath(pngPath);
+  const iconPath = isDev
+    ? path.join(__dirname, '..', 'build', 'icon.png')
+    : path.join(process.resourcesPath, 'app.asar', 'build', 'icon.png');
+
+  return nativeImage.createFromPath(iconPath);
 }
 
 function createSplashWindow() {
@@ -20,9 +23,7 @@ function createSplashWindow() {
     width: 520,
     height: 320,
     frame: false,
-    transparent: false,
     resizable: false,
-    movable: true,
     center: true,
     show: true,
     backgroundColor: '#09090b',
@@ -59,36 +60,24 @@ function createMainWindow() {
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
     }
-
     mainWindow.show();
-  });
-
-  mainWindow.webContents.on('did-fail-load', async () => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
-    }
-
-    await dialog.showMessageBox({
-      type: 'error',
-      title: 'WoT Tracker',
-      message: 'Rakenduse sisemine server ei käivitunud.',
-      detail: 'Sulge rakendus ja käivita see uuesti. Kui probleem kordub, buildi uus installer sellest parandatud paketist.',
-    });
   });
 }
 
-function startNextServer() {
-  const serverPath = path.join(__dirname, 'next-server.js');
+function startStandaloneServer() {
+  const serverPath = path.join(process.resourcesPath, 'standalone', 'server.js');
 
-  nextServerProcess = fork(serverPath, [], {
-    cwd: path.join(__dirname, '..'),
+  nextServerProcess = spawn(process.execPath, [serverPath], {
+    cwd: path.join(process.resourcesPath, 'standalone'),
     env: {
       ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
       NODE_ENV: 'production',
       PORT: String(port),
       HOSTNAME: host,
     },
     stdio: 'inherit',
+    windowsHide: true,
   });
 
   nextServerProcess.on('close', () => {
@@ -101,7 +90,7 @@ async function waitForServer(url, timeoutMs = 45000) {
 
   while (Date.now() - start < timeoutMs) {
     try {
-      const response = await fetch(url, { method: 'GET' });
+      const response = await fetch(url);
       if (response.ok || response.status === 404) {
         return;
       }
@@ -110,14 +99,14 @@ async function waitForServer(url, timeoutMs = 45000) {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  throw new Error(`Next server did not start in time: ${url}`);
+  throw new Error(`Server did not start in time: ${url}`);
 }
 
 app.whenReady().then(async () => {
   createSplashWindow();
 
   if (!isDev) {
-    startNextServer();
+    startStandaloneServer();
   }
 
   try {
@@ -137,22 +126,16 @@ app.whenReady().then(async () => {
 
     app.quit();
   }
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
-    }
-  });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
 });
 
 app.on('before-quit', () => {
   if (nextServerProcess) {
     nextServerProcess.kill();
+  }
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
 });
