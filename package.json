@@ -1,6 +1,7 @@
+# package.json
 {
   "name": "wot-tracker-desktop",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "author": "OpenAI / Custom Build",
   "description": "WoT Tracker Desktop - World of Tanks statistics tracker and map advisor",
@@ -65,3 +66,290 @@
     }
   }
 }
+
+# next.config.ts
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+};
+
+export default nextConfig;
+
+# .env.local.example
+WOT_DEFAULT_REGION=eu
+
+# scripts/prepare-standalone.cjs
+const fs = require('fs');
+const path = require('path');
+
+const root = process.cwd();
+const standaloneSrc = path.join(root, '.next', 'standalone');
+const staticSrc = path.join(root, '.next', 'static');
+const publicSrc = path.join(root, 'public');
+
+const runtimeRoot = path.join(root, 'release-runtime', 'standalone');
+
+function removeDir(target) {
+  fs.rmSync(target, { recursive: true, force: true });
+}
+
+function ensureDir(target) {
+  fs.mkdirSync(target, { recursive: true });
+}
+
+function copyDir(src, dest) {
+  ensureDir(dest);
+
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      ensureDir(path.dirname(destPath));
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function copyIfExists(src, dest) {
+  if (!fs.existsSync(src)) {
+    return;
+  }
+
+  const stat = fs.statSync(src);
+
+  if (stat.isDirectory()) {
+    copyDir(src, dest);
+  } else {
+    ensureDir(path.dirname(dest));
+    fs.copyFileSync(src, dest);
+  }
+}
+
+removeDir(path.join(root, 'release-runtime'));
+
+copyIfExists(standaloneSrc, runtimeRoot);
+copyIfExists(staticSrc, path.join(runtimeRoot, '.next', 'static'));
+copyIfExists(publicSrc, path.join(runtimeRoot, 'public'));
+
+const requiredPaths = [
+  path.join(runtimeRoot, 'server.js'),
+  path.join(runtimeRoot, 'package.json'),
+  path.join(runtimeRoot, 'node_modules'),
+  path.join(runtimeRoot, '.next')
+];
+
+for (const requiredPath of requiredPaths) {
+  if (!fs.existsSync(requiredPath)) {
+    console.error(`Missing runtime asset: ${requiredPath}`);
+    process.exit(1);
+  }
+}
+
+console.log('Prepared standalone runtime:', runtimeRoot);
+
+# electron/main.js
+const { app, BrowserWindow, nativeImage, dialog } = require('electron');
+const path = require('path');
+const { spawn } = require('child_process');
+
+let mainWindow = null;
+let splashWindow = null;
+let nextServerProcess = null;
+
+const isDev = !app.isPackaged;
+const port = 3000;
+const host = '127.0.0.1';
+
+function getAppIcon() {
+  const devIcon = path.join(__dirname, '..', 'build', 'icon.png');
+  const packagedIcon = path.join(process.resourcesPath, 'app.asar', 'build', 'icon.png');
+  return nativeImage.createFromPath(isDev ? devIcon : packagedIcon);
+}
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 520,
+    height: 320,
+    frame: false,
+    resizable: false,
+    center: true,
+    show: true,
+    backgroundColor: '#09090b',
+    icon: getAppIcon(),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+}
+
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1440,
+    height: 960,
+    minWidth: 1160,
+    minHeight: 760,
+    backgroundColor: '#09090b',
+    autoHideMenuBar: true,
+    show: false,
+    icon: getAppIcon(),
+    title: 'WoT Tracker',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadURL(`http://${host}:${port}`);
+
+  mainWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+    }
+    mainWindow.show();
+  });
+
+  mainWindow.webContents.on('did-fail-load', async () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+    }
+
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'WoT Tracker',
+      message: 'Rakenduse sisemine server ei käivitunud.',
+      detail: 'Sulge rakendus ja käivita see uuesti. Kui probleem kordub, tee uus build parandatud paketist.'
+    });
+  });
+}
+
+function startStandaloneServer() {
+  const serverPath = path.join(process.resourcesPath, 'standalone', 'server.js');
+
+  nextServerProcess = spawn(process.execPath, [serverPath], {
+    cwd: path.join(process.resourcesPath, 'standalone'),
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+      NODE_ENV: 'production',
+      PORT: String(port),
+      HOSTNAME: host
+    },
+    stdio: 'inherit',
+    windowsHide: true
+  });
+
+  nextServerProcess.on('close', () => {
+    nextServerProcess = null;
+  });
+}
+
+async function waitForServer(url, timeoutMs = 45000) {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok || response.status === 404) {
+        return;
+      }
+    } catch {}
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  throw new Error(`Server did not start in time: ${url}`);
+}
+
+app.whenReady().then(async () => {
+  createSplashWindow();
+
+  if (!isDev) {
+    startStandaloneServer();
+  }
+
+  try {
+    await waitForServer(`http://${host}:${port}`);
+    createMainWindow();
+  } catch (error) {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+    }
+
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'WoT Tracker',
+      message: 'Rakendust ei õnnestunud käivitada.',
+      detail: error instanceof Error ? error.message : 'Unknown startup error'
+    });
+
+    app.quit();
+  }
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
+    }
+  });
+});
+
+app.on('before-quit', () => {
+  if (nextServerProcess) {
+    nextServerProcess.kill();
+  }
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+# .github/workflows/build-windows.yml
+name: Build Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create .env.local
+        shell: pwsh
+        run: |
+          if (!(Test-Path ".env.local")) {
+            Copy-Item ".env.local.example" ".env.local"
+          }
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build portable EXE
+        run: npm run dist:portable
+
+      - name: Build installer EXE
+        run: npm run dist:win
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wot-tracker-windows-build
+          path: dist/*
