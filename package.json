@@ -1,6 +1,6 @@
 {
   "name": "wot-tracker-desktop",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "private": true,
   "author": "OpenAI / Custom Build",
   "description": "WoT Tracker Desktop - World of Tanks statistics tracker and map advisor",
@@ -8,9 +8,9 @@
   "scripts": {
     "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
     "build:web": "next build",
-    "start:web": "next start",
-    "dist:win": "npm run build:web && electron-builder --win nsis --publish never",
-    "dist:portable": "npm run build:web && electron-builder --win portable --publish never"
+    "prepare:runtime": "node scripts/prepare-standalone.cjs",
+    "dist:win": "npm run build:web && npm run prepare:runtime && electron-builder --win nsis --publish never",
+    "dist:portable": "npm run build:web && npm run prepare:runtime && electron-builder --win portable --publish never"
   },
   "dependencies": {
     "next": "16.0.0",
@@ -42,12 +42,8 @@
     ],
     "extraResources": [
       {
-        "from": ".next/standalone",
+        "from": "release-runtime/standalone",
         "to": "standalone"
-      },
-      {
-        "from": ".next/static",
-        "to": "standalone/.next/static"
       }
     ],
     "win": {

@@ -87,3 +87,12 @@ Selles versioonis on parandatud packaged `.exe` runtime:
 - production build ei kasuta enam `npx next start`
 - Electron käivitab kohaliku Next serveri faili `electron/next-server.js` kaudu
 - splash ei tohiks enam jääda lõpmatuseni ette, kui build on korrektne
+
+
+## Final clean packaged build
+
+Selles versioonis valmistatakse standalone runtime enne Electron buildi eraldi ette:
+- `.next/standalone` kopeeritakse `release-runtime/standalone`
+- `.next/static` kopeeritakse `release-runtime/standalone/.next/static`
+- `public` kopeeritakse `release-runtime/standalone/public`
+- Electron pakib kaasa `release-runtime/standalone`
