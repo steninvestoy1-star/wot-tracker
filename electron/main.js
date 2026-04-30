@@ -1,3 +1,4 @@
+// electron/main.js
 const { app, BrowserWindow, nativeImage, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -10,12 +11,14 @@ const isDev = !app.isPackaged;
 const port = 3000;
 const host = '127.0.0.1';
 
-function getAppIcon() {
-  const iconPath = isDev
-    ? path.join(__dirname, '..', 'build', 'icon.png')
-    : path.join(process.resourcesPath, 'app.asar', 'build', 'icon.png');
+function getIconPath() {
+  const devPath = path.join(__dirname, '..', 'build', 'icon.png');
+  const packagedPath = path.join(process.resourcesPath, 'app.asar', 'build', 'icon.png');
+  return isDev ? devPath : packagedPath;
+}
 
-  return nativeImage.createFromPath(iconPath);
+function getAppIcon() {
+  return nativeImage.createFromPath(getIconPath());
 }
 
 function createSplashWindow() {
@@ -62,6 +65,19 @@ function createMainWindow() {
     }
     mainWindow.show();
   });
+
+  mainWindow.webContents.on('did-fail-load', async () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+    }
+
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'WoT Tracker',
+      message: 'Rakenduse sisemine server ei käivitunud.',
+      detail: 'Sulge rakendus ja käivita see uuesti. Kui probleem kordub, tee uus build parandatud paketist.',
+    });
+  });
 }
 
 function startStandaloneServer() {
@@ -94,7 +110,7 @@ async function waitForServer(url, timeoutMs = 45000) {
       if (response.ok || response.status === 404) {
         return;
       }
-    } catch (_) {}
+    } catch {}
 
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -126,6 +142,12 @@ app.whenReady().then(async () => {
 
     app.quit();
   }
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
+    }
+  });
 });
 
 app.on('before-quit', () => {
