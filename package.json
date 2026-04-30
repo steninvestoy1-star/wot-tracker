@@ -1,39 +1,31 @@
 {
   "name": "wot-tracker-desktop",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
-  "author": "steninvestoy1-star",
+  "author": "OpenAI / Custom Build",
   "description": "WoT Tracker Desktop - World of Tanks statistics tracker and map advisor",
   "main": "electron/main.js",
-  "homepage": "./",
   "scripts": {
     "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
     "build:web": "next build",
     "start:web": "next start",
     "dist:win": "npm run build:web && electron-builder --win nsis --publish never",
-    "dist:portable": "npm run build:web && electron-builder --win portable --publish never",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "dist:portable": "npm run build:web && electron-builder --win portable --publish never"
   },
   "dependencies": {
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "axios": "^1.7.7"
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@types/node": "^20.17.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "concurrently": "^9.2.1",
-    "electron": "^31.3.0",
-    "electron-builder": "^25.1.1",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "^15.1.0",
-    "typescript": "^5.7.0",
-    "wait-on": "^8.0.5"
+    "@types/node": "24.7.2",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "concurrently": "9.2.1",
+    "electron": "37.2.6",
+    "electron-builder": "26.0.12",
+    "typescript": "5.9.3",
+    "wait-on": "8.0.5"
   },
   "build": {
     "appId": "com.wottracker.desktop",
@@ -45,21 +37,21 @@
     },
     "files": [
       "electron/**/*",
-      ".next/**/*",
-      "node_modules/**/*",
-      "package.json",
-      "public/**/*"
+      "build/**/*",
+      "package.json"
     ],
-    "extraMetadata": {
-      "main": "electron/main.js"
-    },
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "standalone"
+      },
+      {
+        "from": ".next/static",
+        "to": "standalone/.next/static"
+      }
+    ],
     "win": {
       "icon": "build/icon.ico",
-      "certificateFile": null,
-      "certificatePassword": null,
-      "signingHashAlgorithms": [
-        "sha256"
-      ],
       "target": [
         "nsis",
         "portable"
@@ -67,17 +59,13 @@
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
       "shortcutName": "WoT Tracker",
       "uninstallDisplayName": "WoT Tracker",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico"
-    },
-    "portable": {
-      "artifactName": "${productName}-${version}-portable.${ext}"
     }
   }
 }
