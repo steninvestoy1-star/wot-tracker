@@ -1,0 +1,72 @@
+{
+  "name": "wot-tracker-desktop",
+  "version": "0.4.0",
+  "private": true,
+  "author": "OpenAI / Custom Build",
+  "description": "WoT Tracker Desktop - World of Tanks statistics tracker and map advisor",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "build:web": "next build",
+    "start:web": "next start",
+    "dist:win": "npm run build:web && electron-builder --win nsis --publish never",
+    "dist:portable": "npm run build:web && electron-builder --win portable --publish never"
+  },
+  "dependencies": {
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.2",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "concurrently": "9.2.1",
+    "electron": "37.2.6",
+    "electron-builder": "26.0.12",
+    "typescript": "5.9.3",
+    "wait-on": "8.0.5"
+  },
+  "build": {
+    "appId": "com.wottracker.desktop",
+    "productName": "WoT Tracker",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      ".next/**/*",
+      "app/**/*",
+      "components/**/*",
+      "electron/**/*",
+      "lib/**/*",
+      "public/**/*",
+      "build/**/*",
+      "package.json",
+      "next.config.ts",
+      "next-env.d.ts",
+      "tsconfig.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "WoT Tracker",
+      "uninstallDisplayName": "WoT Tracker",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

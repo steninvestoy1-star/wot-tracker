@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="et">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WoT Tracker</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(245,158,11,0.22), transparent 26%),
+          radial-gradient(circle at bottom right, rgba(239,68,68,0.16), transparent 24%),
+          linear-gradient(180deg, #0b0b0f 0%, #09090b 100%);
+        color: #fafafa;
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: 100%;
+        max-width: 460px;
+        margin: 24px;
+        border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(16,16,20,0.88);
+        box-shadow: 0 30px 100px rgba(0,0,0,0.48);
+        padding: 34px;
+        text-align: center;
+        backdrop-filter: blur(14px);
+      }
+      .logo {
+        width: 86px;
+        height: 86px;
+        margin: 0 auto 18px;
+        border-radius: 26px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #f59e0b, #dc2626);
+        box-shadow: 0 16px 36px rgba(220, 38, 38, 0.35);
+      }
+      .logo svg { width: 46px; height: 46px; }
+      h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.03em; }
+      .sub { margin: 0; color: #a1a1aa; line-height: 1.65; }
+      .tag {
+        display: inline-flex;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(245,158,11,0.22);
+        background: rgba(245,158,11,0.1);
+        color: #fde68a;
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+      .bar {
+        margin-top: 24px;
+        height: 10px;
+        width: 100%;
+        background: rgba(255,255,255,0.07);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar > span {
+        display: block;
+        height: 100%;
+        width: 30%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #f59e0b, #ef4444);
+        animation: load 1.5s ease-in-out infinite;
+      }
+      @keyframes load {
+        0% { transform: translateX(-120%); }
+        100% { transform: translateX(340%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="tag">Desktop Edition</div>
+      <div class="logo">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M10 36L32 12L54 36L45 36L45 52L19 52L19 36L10 36Z" fill="white" opacity="0.95"/>
+          <rect x="25" y="28" width="14" height="10" rx="2" fill="#111113"/>
+        </svg>
+      </div>
+      <h1>WoT Tracker</h1>
+      <p class="sub">Laen statistikat, kaarte ja tankisoovitusi…</p>
+      <div class="bar"><span></span></div>
+    </div>
+  </body>
+</html>

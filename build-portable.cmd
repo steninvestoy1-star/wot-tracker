@@ -1,0 +1,30 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+
+if not exist node_modules (
+  echo Installing dependencies...
+  call npm.cmd install
+  if errorlevel 1 (
+    echo.
+    echo Install failed.
+    pause
+    exit /b 1
+  )
+)
+
+if not exist .env.local (
+  copy /Y .env.local.example .env.local >nul
+)
+
+call npm.cmd run dist:portable
+if errorlevel 1 (
+  echo.
+  echo Portable build failed.
+  pause
+  exit /b 1
+)
+
+echo.
+echo Portable EXE should now be in the dist folder.
+pause

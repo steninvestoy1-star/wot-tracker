@@ -1,0 +1,2 @@
+This custom project package is provided as-is for personal use and modification.
+Verify third-party API terms before commercial distribution.
